@@ -23,7 +23,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrListDatasetsResponse"
+              "$ref": "#/definitions/CdrListDatasetsResponse"
             }
           }
         },
@@ -52,7 +52,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrDataset"
+              "$ref": "#/definitions/CdrDataset"
             }
           }
         },
@@ -62,7 +62,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cdrDataset"
+              "$ref": "#/definitions/CdrDataset"
             }
           }
         ],
@@ -78,7 +78,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrDataPointer"
+              "$ref": "#/definitions/CdrDataPointer"
             }
           }
         },
@@ -131,7 +131,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrDataPointer"
+              "$ref": "#/definitions/CdrDataPointer"
             }
           }
         },
@@ -153,7 +153,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cdrDataPointer"
+              "$ref": "#/definitions/CdrDataPointer"
             }
           }
         ],
@@ -169,7 +169,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrDataset"
+              "$ref": "#/definitions/CdrDataset"
             }
           }
         },
@@ -210,7 +210,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrDataset"
+              "$ref": "#/definitions/CdrDataset"
             }
           }
         },
@@ -226,7 +226,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cdrDataset"
+              "$ref": "#/definitions/CdrDataset"
             }
           }
         ],
@@ -242,7 +242,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrDataPointer"
+              "$ref": "#/definitions/CdrDataPointer"
             }
           }
         },
@@ -258,7 +258,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cdrDataPointer"
+              "$ref": "#/definitions/CdrDataPointer"
             }
           }
         ],
@@ -274,7 +274,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrIndividual"
+              "$ref": "#/definitions/CdrIndividual"
             }
           }
         },
@@ -290,7 +290,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cdrIndividual"
+              "$ref": "#/definitions/CdrIndividual"
             }
           }
         ],
@@ -306,7 +306,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrIndividual"
+              "$ref": "#/definitions/CdrIndividual"
             }
           }
         },
@@ -359,7 +359,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/cdrIndividual"
+              "$ref": "#/definitions/CdrIndividual"
             }
           }
         },
@@ -381,7 +381,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cdrIndividual"
+              "$ref": "#/definitions/CdrIndividual"
             }
           }
         ],
@@ -392,7 +392,7 @@
     }
   },
   "definitions": {
-    "cdrDataPointer": {
+    "CdrDataPointer": {
       "type": "object",
       "properties": {
         "name": {
@@ -420,7 +420,7 @@
         }
       }
     },
-    "cdrDataset": {
+    "CdrDataset": {
       "type": "object",
       "properties": {
         "name": {
@@ -428,7 +428,7 @@
         }
       }
     },
-    "cdrIndividual": {
+    "CdrIndividual": {
       "type": "object",
       "properties": {
         "name": {
@@ -440,13 +440,13 @@
         }
       }
     },
-    "cdrListDatasetsResponse": {
+    "CdrListDatasetsResponse": {
       "type": "object",
       "properties": {
         "datasets": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/cdrDataset"
+            "$ref": "#/definitions/CdrDataset"
           }
         },
         "next_page_token": {

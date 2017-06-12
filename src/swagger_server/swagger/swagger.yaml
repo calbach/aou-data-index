@@ -1,0 +1,311 @@
+---
+swagger: "2.0"
+info:
+  description: "API for indexing curated datasets with user-defined labels, and searching\
+    \ that index."
+  version: "0.0.1"
+  title: "Curated Data Index"
+schemes:
+- "http"
+- "https"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+paths:
+  /v1/datasets:
+    get:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "list_datasets"
+      parameters:
+      - name: "page_size"
+        in: "query"
+        required: false
+        type: "integer"
+        format: "int32"
+      - name: "page_token"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrListDatasetsResponse"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+    post:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "create_dataset"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/CdrDataset"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrDataset"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+  /v1/datasets/{dataset_id}/dataPointers/{data_pointer_id}:
+    get:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "get_data_pointer"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "data_pointer_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrDataPointer"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+    put:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "update_data_pointer"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "data_pointer_id"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/CdrDataPointer"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrDataPointer"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+    delete:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "delete_data_pointer"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "data_pointer_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: ""
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+  /v1/datasets/{dataset_id}:
+    get:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "get_dataset"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrDataset"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+    put:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "update_dataset"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/CdrDataset"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrDataset"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+    delete:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "delete_dataset"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: ""
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+  /v1/datasets/{dataset_id}/dataPointers:
+    post:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "create_data_pointer"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/CdrDataPointer"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrDataPointer"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+  /v1/datasets/{dataset_id}/individuals:
+    post:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "create_individual"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/CdrIndividual"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrIndividual"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+  /v1/datasets/{dataset_id}/individuals/{individual_id}:
+    get:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "get_individual"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "individual_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrIndividual"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+    put:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "update_individual"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "individual_id"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/CdrIndividual"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/CdrIndividual"
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+    delete:
+      tags:
+      - "CuratedDataIndex"
+      operationId: "delete_individual"
+      parameters:
+      - name: "dataset_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "individual_id"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: ""
+      x-swagger-router-controller: "swagger_server.controllers.curated_data_index_controller"
+definitions:
+  CdrDataPointer:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+        description: "Server generated."
+      uri:
+        type: "string"
+        description: "Unique within a dataset."
+      individual_names:
+        type: "array"
+        description: "One-of individual_names or all_individuals; full individual\
+          \ names of the form 'datasets/*/individuals/*'."
+        items:
+          type: "string"
+      all_individuals:
+        type: "boolean"
+        format: "boolean"
+        description: "One-of individual_names or all_individuals."
+      labels:
+        $ref: "#/definitions/labels"
+  CdrDataset:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+  CdrIndividual:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+        description: "Unique within a dataset."
+      labels:
+        $ref: "#/definitions/labels"
+  CdrListDatasetsResponse:
+    type: "object"
+    properties:
+      datasets:
+        type: "array"
+        items:
+          $ref: "#/definitions/CdrDataset"
+      next_page_token:
+        type: "string"
+  labels:
+    type: "object"
