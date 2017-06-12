@@ -1,0 +1,462 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Curated Data Index",
+    "description": "API for indexing curated datasets with user-defined labels, and searching that index.",
+    "version": "0.0.1"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/datasets": {
+      "get": {
+        "operationId": "ListDatasets",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrListDatasetsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      },
+      "post": {
+        "operationId": "CreateDataset",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrDataset"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cdrDataset"
+            }
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      }
+    },
+    "/v1/datasets/{dataset_id}/dataPointers/{data_pointer_id}": {
+      "get": {
+        "operationId": "GetDataPointer",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrDataPointer"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "data_pointer_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      },
+      "delete": {
+        "operationId": "DeleteDataPointer",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "data_pointer_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      },
+      "put": {
+        "operationId": "UpdateDataPointer",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrDataPointer"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "data_pointer_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cdrDataPointer"
+            }
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      }
+    },
+    "/v1/datasets/{dataset_id}": {
+      "get": {
+        "operationId": "GetDataset",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrDataset"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      },
+      "delete": {
+        "operationId": "DeleteDataset",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      },
+      "put": {
+        "operationId": "UpdateDataset",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrDataset"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cdrDataset"
+            }
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      }
+    },
+    "/v1/datasets/{dataset_id}/dataPointers": {
+      "post": {
+        "operationId": "CreateDataPointer",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrDataPointer"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cdrDataPointer"
+            }
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      }
+    },
+    "/v1/datasets/{dataset_id}/individuals": {
+      "post": {
+        "operationId": "CreateIndividual",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrIndividual"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cdrIndividual"
+            }
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      }
+    },
+    "/v1/datasets/{dataset_id}/individuals/{individual_id}": {
+      "get": {
+        "operationId": "GetIndividual",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrIndividual"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "individual_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      },
+      "delete": {
+        "operationId": "DeleteIndividual",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "individual_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      },
+      "put": {
+        "operationId": "UpdateIndividual",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/cdrIndividual"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "individual_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cdrIndividual"
+            }
+          }
+        ],
+        "tags": [
+          "CuratedDataIndex"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "cdrDataPointer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Server generated."
+        },
+        "uri": {
+          "type": "string",
+          "description": "Unique within a dataset."
+        },
+        "individual_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "One-of individual_names or all_individuals; full individual names of the form 'datasets/*/individuals/*'."
+        },
+        "all_individuals": {
+          "type": "boolean",
+          "format": "boolean",
+          "description": "One-of individual_names or all_individuals."
+        },
+        "labels": {
+          "$ref": "#/definitions/labels"
+        }
+      }
+    },
+    "cdrDataset": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "cdrIndividual": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique within a dataset."
+        },
+        "labels": {
+          "$ref": "#/definitions/labels"
+        }
+      }
+    },
+    "cdrListDatasetsResponse": {
+      "type": "object",
+      "properties": {
+        "datasets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cdrDataset"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}
