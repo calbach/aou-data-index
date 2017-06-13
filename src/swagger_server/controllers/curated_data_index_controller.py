@@ -11,191 +11,202 @@ from ..util import deserialize_date, deserialize_datetime
 
 def create_data_pointer(dataset_id, body):
     """
-    create_data_pointer
-    
-    :param dataset_id: 
-    :type dataset_id: str
-    :param body: 
-    :type body: dict | bytes
+    Create a data pointer.
 
-    :rtype: CdrDataPointer
+    Args:
+      dataset_id: the parent dataset
+      body: the JSON request body
+
+    Returns:
+      a dictionary representing a CdrDataPointer
     """
-    if connexion.request.is_json:
-        body = CdrDataPointer.from_dict(connexion.request.get_json())
-    return 'do some magic!'
+    if not connexion.request.is_json:
+      return {}, 400
+    dp = CdrDataPointer.from_dict(connexion.request.get_json())
+    # TODO(calbach): Call ES.
+    return dp.to_dict()
 
 
 def create_dataset(body):
     """
-    create_dataset
-    
-    :param body: 
-    :type body: dict | bytes
+    Create a dataset.
 
-    :rtype: CdrDataset
+    Args:
+      body: the dataset JSON
+
+    Returns:
+      a dictionary representing a CdrDataset
     """
-    if connexion.request.is_json:
-        body = CdrDataset.from_dict(connexion.request.get_json())
-    return 'do some magic!'
+    if not connexion.request.is_json:
+      return {}, 400
+    dataset = CdrDataset.from_dict(connexion.request.get_json())
+    # TODO(calbach): Call ES.
+    return dataset.to_dict()
 
 
 def create_individual(dataset_id, body):
     """
-    create_individual
-    
-    :param dataset_id: 
-    :type dataset_id: str
-    :param body: 
-    :type body: dict | bytes
+    Create an individual.
 
-    :rtype: CdrIndividual
+    Args:
+      dataset_id: the parent dataset
+      body: the JSON request body
+
+    Returns:
+      a dictionary representing a CdrIndividual
     """
-    if connexion.request.is_json:
-        body = CdrIndividual.from_dict(connexion.request.get_json())
-    return 'do some magic!'
+    if not connexion.request.is_json:
+      return {}, 400
+    individual = CdrIndividual.from_dict(connexion.request.get_json())
+    # TODO(calbach): Call ES.
+    return individual.to_dict()
 
 
 def delete_data_pointer(dataset_id, data_pointer_id):
     """
-    delete_data_pointer
-    
-    :param dataset_id: 
-    :type dataset_id: str
-    :param data_pointer_id: 
-    :type data_pointer_id: str
+    Deletes a data pointer.
 
-    :rtype: None
+    Args:
+      dataset_id: the parent dataset
+      data_pointer_id: the data pointer to delete
     """
-    return 'do some magic!'
+    # TODO(calbach): Call ES.
+    pass
 
 
 def delete_dataset(dataset_id):
     """
-    delete_dataset
-    
-    :param dataset_id: 
-    :type dataset_id: str
+    Deletes a dataset.
 
-    :rtype: None
+    Args:
+      dataset_id: the dataset to delete
     """
-    return 'do some magic!'
+    # TODO(calbach): Call ES.
+    pass
 
 
 def delete_individual(dataset_id, individual_id):
     """
-    delete_individual
-    
-    :param dataset_id: 
-    :type dataset_id: str
-    :param individual_id: 
-    :type individual_id: str
+    Deletes an individual.
 
-    :rtype: None
+    Args:
+      dataset_id: the parent dataset
+      individual_id: the individual to delete
     """
-    return 'do some magic!'
+    # TODO(calbach): Call ES.
+    pass
 
 
 def get_data_pointer(dataset_id, data_pointer_id):
     """
-    get_data_pointer
-    
-    :param dataset_id: 
-    :type dataset_id: str
-    :param data_pointer_id: 
-    :type data_pointer_id: str
+    Gets a data pointer.
 
-    :rtype: CdrDataPointer
+    Args:
+      dataset_id: the parent dataset
+      data_pointer_id: the data pointer to retrieve
+
+    Returns:
+      a dictionary representation of a CdrDataPointer
     """
-    return 'do some magic!'
+    # TODO(calbach): Call ES.
+    return {}
 
 
 def get_dataset(dataset_id):
     """
-    get_dataset
-    
-    :param dataset_id: 
-    :type dataset_id: str
+    Gets a dataset.
 
-    :rtype: CdrDataset
+    Args:
+      dataset_id: the dataset to retrieve
+
+    Returns:
+      a dictionary representation of a CdrDataset
     """
-    return 'do some magic!'
+    # TODO(calbach): Call ES.
+    return {}
 
 
 def get_individual(dataset_id, individual_id):
     """
-    get_individual
-    
-    :param dataset_id: 
-    :type dataset_id: str
-    :param individual_id: 
-    :type individual_id: str
+    Gets an individual.
 
-    :rtype: CdrIndividual
+    Args:
+      dataset_id: the parent dataset
+      individual_id: the data pointer to retrieve
+
+    Returns:
+      a dictionary representation of a CdrIndividual
     """
-    return 'do some magic!'
+    # TODO(calbach): Call ES.
+    return {}
 
 
 def list_datasets(page_size=None, page_token=None):
     """
-    list_datasets
-    
-    :param page_size: 
-    :type page_size: int
-    :param page_token: 
-    :type page_token: str
+    Lists datasets.
 
-    :rtype: CdrListDatasetsResponse
+    Args:
+      page_size: the maximum number of elements to return per-page
+      page_token: pagination token for continued pagination
+
+    Returns:
+      a dictionary representation of a CdrListDatasetsResponse
     """
-    return 'do some magic!'
+    # TODO(calbach): Call ES.
+    return {}
 
 
 def update_data_pointer(dataset_id, data_pointer_id, body):
     """
-    update_data_pointer
-    
-    :param dataset_id: 
-    :type dataset_id: str
-    :param data_pointer_id: 
-    :type data_pointer_id: str
-    :param body: 
-    :type body: dict | bytes
+    Updates a data pointer.
 
-    :rtype: CdrDataPointer
+    Args:
+      dataset_id: the parent dataset
+      data_pointer_id: the data pointer to update
+      body: JSON representation of the updated CdrDataPointer
+
+    Returns:
+      a JSON representation of the updated CdrDataPointer
     """
-    if connexion.request.is_json:
-        body = CdrDataPointer.from_dict(connexion.request.get_json())
-    return 'do some magic!'
+    if not connexion.request.is_json:
+      return {}, 400
+    dp = CdrDataPointer.from_dict(connexion.request.get_json())
+    # TODO(calbach): Call ES.
+    return dp.to_dict()
 
 
 def update_dataset(dataset_id, body):
     """
-    update_dataset
-    
-    :param dataset_id: 
-    :type dataset_id: str
-    :param body: 
-    :type body: dict | bytes
+    Updates a dataset.
 
-    :rtype: CdrDataset
+    Args:
+      dataset_id: the dataset to update
+      body: JSON representation of the updated CdrDataset
+
+    Returns:
+      a JSON representation of the updated CdrDataset
     """
-    if connexion.request.is_json:
-        body = CdrDataset.from_dict(connexion.request.get_json())
-    return 'do some magic!'
+    if not connexion.request.is_json:
+      return {}, 400
+    dataset = CdrDataset.from_dict(connexion.request.get_json())
+    # TODO(calbach): Call ES.
+    return dataset.to_dict()
 
 
 def update_individual(dataset_id, individual_id, body):
     """
-    update_individual
-    
-    :param dataset_id: 
-    :type dataset_id: str
-    :param individual_id: 
-    :type individual_id: str
-    :param body: 
-    :type body: dict | bytes
+    Updates a data pointer.
 
-    :rtype: CdrIndividual
+    Args:
+      dataset_id: the parent dataset
+      individual_id: the individual to update
+      body: JSON representation of the updated CdrIndividual
+
+    Returns:
+      a JSON representation of the updated CdrIndividual
     """
-    if connexion.request.is_json:
-        body = CdrIndividual.from_dict(connexion.request.get_json())
-    return 'do some magic!'
+    if not connexion.request.is_json:
+      return {}, 400
+    individual = CdrIndividual.from_dict(connexion.request.get_json())
+    # TODO(calbach): Call ES.
+    return individual.to_dict()
