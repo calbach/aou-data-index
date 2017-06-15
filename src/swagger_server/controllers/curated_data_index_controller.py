@@ -3,7 +3,7 @@ import connexion
 import json
 import urllib
 import requests
-from errors import DatasetNotFound, IndividualNotFound
+import errors
 from werkzeug.exceptions import BadRequest, InternalServerError, NotFound
 from swagger_server.models.cdr_data_pointer import CdrDataPointer
 from swagger_server.models.cdr_dataset import CdrDataset
@@ -14,8 +14,9 @@ from typing import List, Dict
 from six import iteritems
 from ..util import deserialize_date, deserialize_datetime
 
+# TODO(calbach): Sanitize IDs (no ':') and any strings we're feeding into ES.
 # TODO(calbach): Figure out how to plumb parameters through, not globals.
-INDEX_ADDR = 'http://localhost:9200'
+INDEX_ADDR = None
 ES_HEADERS = {'content-type': 'application/json'}
 
 
@@ -39,18 +40,18 @@ def ppl_by_ppl_index_path(ds_id, id):
   return by_ppl_index(ds_id) + '/individuals/' + id
 
 
-def data_by_ppl_index_path(ds_id, uri, ind_id):
-  return by_ppl_index(ds_id) + '/data/{}?parent={}'.format(
-      urllib.urlencode(uri), ind_id)
+def data_by_ppl_index_path(ds_id, dp_id, ind_id):
+  return by_ppl_index(ds_id) + '/data/{}:{}?parent={}'.format(
+      ind_id, dp_id, ind_id)
 
 
-def data_by_data_index_path(ds_id, uri):
-  return by_data_index(ds_id) + '/data/' + urllib.urlencode(uri)
+def data_by_data_index_path(ds_id, dp_id):
+  return by_data_index(ds_id) + '/data/' + dp_id
 
 
-def ppl_by_data_index_path(ds_id, indID, uri):
-  return by_data_index(ds_id) + '/individuals/{}?parent={}'.format(
-      indID, urllib.urlencode(uri))
+def ppl_by_data_index_path(ds_id, indID, dp_id):
+  return by_data_index(ds_id) + '/individuals/{}:{}?parent={}'.format(
+      dp_id, indID, dp_id)
 
 
 def split_ds_name(ds_name):
@@ -67,6 +68,18 @@ def split_individual_name(name):
   return (parts[1], parts[3])
 
 
+def data_pointer_name(ds_id, uri):
+  id = urllib.quote(uri, safe='')
+  return ('/datasets/{}/dataPointers/{}'.format(ds_id, id), id)
+
+
+def split_data_pointer_name(name):
+  parts = name.split('/')
+  if len(parts) != 4 or parts[0] != 'datasets' or parts[2] != 'dataPointers':
+    raise BadRequest('malformed dataPointer name "{}"'.format(name))
+  return (parts[1], parts[3])
+
+
 def doc_to_dataset(doc):
   return CdrDataset(name='datasets/' + doc['_id'])
 
@@ -79,11 +92,26 @@ def doc_to_individual(doc):
   ds_id = doc['_index'].split(':')[1]
   return CdrIndividual(
       name='datasets/{}/individuals/{}'.format(ds_id, doc['_id']),
-      labels=doc['_source'].copy(),)
+      labels=doc['_source'].copy())
 
 
 def individual_to_doc(individual):
+  if not individual.labels:
+    return {}
   return individual.labels.copy()
+
+
+def doc_to_data_pointer(doc):
+  ds_id = doc['_index'].split(':')[1]
+  return CdrDataPointer(
+      name='datasets/{}/dataPointers/{}'.format(ds_id, doc['_id']),
+      labels=doc['_source'].copy())
+
+
+def data_pointer_to_doc(dp):
+  if not dp.labels:
+    return {}
+  return dp.labels.copy()
 
 
 def create_data_pointer(dataset_id, body):
@@ -100,10 +128,38 @@ def create_data_pointer(dataset_id, body):
   if not connexion.request.is_json:
     raise InternalServerError('got unexpected non-JSON payload')
   dp = CdrDataPointer.from_dict(body)
-  if not dp or not dp.Uri:
+  if not dp or not dp.uri:
     raise BadRequest('missing required dataPointer.uri from request')
-  # TODO(calbach): Call ES.
-  return dp.to_dict()
+
+  # Will raise NotFound if the dataset doesn't exist.
+  get_dataset(dataset_id)
+
+  dp.name, dp_id = data_pointer_name(dataset_id, dp.uri)
+  individuals = dict()
+  for name in (dp.individual_names or []):
+    ind_ds_id, ind_id = split_individual_name(name)
+    if dataset_id != ind_ds_id:
+      raise BadRequest('dataPointer.individualNames must belong to the same dataset as the dataPointer ("datasets/{}"), got "{}"'.format(dataset_id, name))
+    # Will raise NotFound if individual doesn't exist.
+    # TODO(calbach): Could batch these requests.
+    individuals[ind_id] = get_individual(dataset_id, ind_id)
+
+  # Add the data pointer documents to the data indices.
+  dp_paths = [data_by_data_index_path(dataset_id, dp_id)]
+  for ind_id in individuals:
+    dp_paths.append(data_by_ppl_index_path(dataset_id, dp_id, ind_id))
+
+  dp_doc = data_pointer_to_doc(dp)
+  for path in dp_paths:
+    requests.put(path, json=dp_doc, headers=ES_HEADERS).raise_for_status()
+
+  # Add the associated individuals documents to the individuals (by data) index.
+  for (ind_id, ind) in individuals.iteritems():
+    requests.put(ppl_by_data_index_path(dataset_id, ind_id, dp_id),
+                 json=individual_to_doc(ind),
+                 headers=ES_HEADERS).raise_for_status()
+
+  return dp
 
 
 def create_dataset(body):
@@ -151,7 +207,7 @@ def create_dataset(body):
           },
       },
       headers=ES_HEADERS).raise_for_status()
-  return dataset.to_dict()
+  return dataset
 
 
 def create_individual(dataset_id, body):
@@ -183,7 +239,7 @@ def create_individual(dataset_id, body):
       ppl_by_ppl_index_path(ds_id, ind_id),
       json=individual_to_doc(individual),
       headers=ES_HEADERS).raise_for_status()
-  return individual.to_dict()
+  return individual
 
 
 def delete_data_pointer(dataset_id, data_pointer_id):
@@ -194,8 +250,51 @@ def delete_data_pointer(dataset_id, data_pointer_id):
       dataset_id: the parent dataset
       data_pointer_id: the data pointer to delete
     """
-  # TODO(calbach): Call ES.
-  pass
+  # Find IDs for all child individuals.
+  child_docs_json = {
+      'query': {
+          'parent_id': {
+              'type': 'individuals',
+              'id': data_pointer_id
+          }
+      }
+  }
+  r = requests.post(by_data_index(dataset_id) + '/individuals/_search',
+                    json=child_docs_json, headers=ES_HEADERS)
+  r.raise_for_status()
+
+  # Prepare to delete this dataPointer wherever it appears in the data-by-ppl
+  # index. This is not a simple query by ID because the doc IDs in this index
+  # contain the parent individual ID as well.
+  to_delete = []
+  for hit in r.json().get('hits').get('hits', []):
+    doc_id = hit.get('_id')
+    parts = doc_id.split(':')
+    if len(parts) != 2:
+      raise InternalServerError('malformed index doc ID "{}"'.format(doc_id))
+    ind_id = parts[1]
+    to_delete.append(data_by_ppl_index_path(dataset_id, data_pointer_id, ind_id))
+
+  all_not_found = True
+
+  # Prepare to delete the parent data document.
+  to_delete.append(data_by_data_index_path(dataset_id, data_pointer_id))
+  for path in to_delete:
+    r = requests.delete(path)
+    if r.status_code != requests.codes.not_found:
+      all_not_found = False
+      r.raise_for_status()
+
+  # Lastly, delete the data document's children. This must be the final step as
+  # the client would not otherwise be able to retry a partially failed delete.
+  r = requests.post(by_data_index(dataset_id) + '/individuals/_delete_by_query',
+                json=child_docs_json, headers=ES_HEADERS)
+  r.raise_for_status()
+  if r.json().get('deleted', 0) > 0:
+    all_not_found = False
+
+  if all_not_found:
+    raise errors.DataPointerNotFound(dataset_id, data_pointer_id)
 
 
 def delete_dataset(dataset_id):
@@ -217,7 +316,7 @@ def delete_dataset(dataset_id):
       r.raise_for_status()
 
   if all_not_found:
-    raise DatasetNotFound(dataset_id)
+    raise errors.DatasetNotFound(dataset_id)
 
 def delete_individual(dataset_id, individual_id):
   """
@@ -227,29 +326,52 @@ def delete_individual(dataset_id, individual_id):
       dataset_id: the parent dataset
       individual_id: the individual to delete
     """
-  all_not_found = True
-  r = requests.delete(
-      ppl_by_ppl_index_path(dataset_id, individual_id))
-  if r.status_code != requests.codes.not_found:
-    all_not_found = False
-    r.raise_for_status()
+  # Find IDs for all child data pointers.
+  child_docs_json = {
+      'query': {
+          'parent_id': {
+              'type': 'data',
+              'id': individual_id
+          }
+      }
+  }
+  r = requests.post(by_ppl_index(dataset_id) + '/data/_search',
+                    json=child_docs_json, headers=ES_HEADERS)
+  r.raise_for_status()
 
-  r = requests.post(
-      by_data_index(dataset_id) + '/individuals/_delete_by_query',
-      json={
-          'query': {
-              'term': {
-                  '_id': individual_id
-              },
-          },
-      },
-      headers=ES_HEADERS).raise_for_status()
-  if r.status_code != requests.codes.not_found:
+  # Prepare to delete this individual wherever it appears in the ppl-by-data
+  # index. This is not a simple query by ID because the doc IDs in this index
+  # contain the parent data pointer ID as well.
+  to_delete = []
+  for hit in r.json().get('hits').get('hits', []):
+    doc_id = hit.get('_id')
+    parts = doc_id.split(':')
+    if len(parts) != 2:
+      raise InternalServerError('malformed index doc ID "{}"'.format(doc_id))
+    dp_id = parts[1]
+    to_delete.append(ppl_by_data_index_path(dataset_id, individual_id, dp_id))
+
+  all_not_found = True
+
+  # Prepare to delete the parent individual.
+  to_delete.append(ppl_by_ppl_index_path(dataset_id, individual_id))
+  for path in to_delete:
+    r = requests.delete(path)
+    if r.status_code != requests.codes.not_found:
+      all_not_found = False
+      r.raise_for_status()
+
+  # Lastly, delete the individual document's children. This must be the final
+  # step as the client would not otherwise be able to retry a partially failed
+  # delete.
+  r = requests.post(by_ppl_index(dataset_id) + '/data/_delete_by_query',
+                json=child_docs_json, headers=ES_HEADERS)
+  r.raise_for_status()
+  if r.json().get('deleted', 0) > 0:
     all_not_found = False
-    r.raise_for_status()
 
   if all_not_found:
-    raise IndividualNotFound(dataset_id, individual_id)
+    raise errors.IndividualNotFound(dataset_id, individual_id)
 
 
 def get_data_pointer(dataset_id, data_pointer_id):
@@ -263,8 +385,12 @@ def get_data_pointer(dataset_id, data_pointer_id):
     Returns:
       a dictionary representation of a CdrDataPointer
     """
-  # TODO(calbach): Call ES.
-  return {}
+  uri = urllib.unquote(data_pointer_id)
+  r = requests.get(data_by_data_index_path(dataset_id, uri))
+  if r.status_code == requests.codes.not_found:
+    raise errors.DataPointerNotFound(dataset_id, data_pointer_id)
+  r.raise_for_status()
+  return doc_to_data_pointer(r.json())
 
 
 def get_dataset(dataset_id):
@@ -279,7 +405,7 @@ def get_dataset(dataset_id):
     """
   r = requests.get(ds_index_path(dataset_id))
   if r.status_code == requests.codes.not_found:
-    raise DatasetNotFound(dataset_id)
+    raise errors.DatasetNotFound(dataset_id)
   r.raise_for_status()
   return doc_to_dataset(r.json())
 
@@ -297,7 +423,7 @@ def get_individual(dataset_id, individual_id):
     """
   r = requests.get(ppl_by_ppl_index_path(dataset_id, individual_id))
   if r.status_code == requests.codes.not_found:
-    raise IndividualNotFound(dataset_id, individual_id)
+    raise errors.IndividualNotFound(dataset_id, individual_id)
   r.raise_for_status()
   return doc_to_individual(r.json())
 
@@ -359,7 +485,7 @@ def list_datasets(page_size=32, page_token=None):
     next_page_token = encode_ds_page_token(offset + page_size)
   return CdrListDatasetsResponse(
       datasets=[doc_to_dataset(d) for d in hits],
-      next_page_token=next_page_token,).to_dict()
+      next_page_token=next_page_token,)
 
 
 def update_data_pointer(dataset_id, data_pointer_id, body):
@@ -377,8 +503,19 @@ def update_data_pointer(dataset_id, data_pointer_id, body):
   if not connexion.request.is_json:
     raise InternalServerError('got unexpected non-JSON payload')
   dp = CdrDataPointer.from_dict(body)
-  # TODO(calbach): Call ES.
-  return dp.to_dict()
+
+  if dp.name:
+    (ds_id, dp_id) = split_individual_name(dp.name)
+    if ds_id != dataset_id or data_pointer_id != dp_id:
+      raise BadRequest('URL name "datasets/{}/dataPointers/{}" and ' +
+                       'dataPointer.name "{}" must agree', dataset_id,
+                       data_pointer_id, dp.name)
+  else:
+    dp.name = 'datasets/{}/dataPointers/{}'.format(
+        dataset_id, data_pointer_id)
+
+  delete_data_pointer(dataset_id, data_pointer_id)
+  return create_data_pointer(dataset_id, dp.to_dict())
 
 
 def update_dataset(dataset_id, body):
@@ -401,15 +538,11 @@ def update_dataset(dataset_id, body):
       raise BadRequest(
           'URL dataset name "datasets/{}" and dataset.name "{}" must agree',
           dataset_id, dataset.name)
+  else:
+    dataset.name = 'datasets/' + dataset_id
 
-  r = requests.post(
-      ds_index_path(dataset_id) + '/_update',
-      json={
-          'doc': dataset_to_doc(dataset),
-      },
-      headers=ES_HEADERS)
-  r.raise_for_status()
-  return dataset.to_dict()
+  delete_dataset(dataset_id)
+  return create_dataset(dataset.to_dict())
 
 
 def update_individual(dataset_id, individual_id, body):
