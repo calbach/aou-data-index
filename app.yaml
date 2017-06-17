@@ -1,0 +1,6 @@
+runtime: python
+env: flex
+entrypoint: gunicorn --chdir src -b ":$PORT" -e FLASK_SETTINGS="/home/vmagent/app/dev.settings" swagger_server.__main__:app
+
+runtime_config:
+  python_version: 2

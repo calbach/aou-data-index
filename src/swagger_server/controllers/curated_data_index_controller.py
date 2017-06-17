@@ -4,6 +4,7 @@ import json
 import urllib
 import requests
 import errors
+from flask import current_app
 from werkzeug.exceptions import BadRequest, InternalServerError, NotFound
 from swagger_server.models.cdr_data_pointer import CdrDataPointer
 from swagger_server.models.cdr_dataset import CdrDataset
@@ -15,13 +16,15 @@ from six import iteritems
 from ..util import deserialize_date, deserialize_datetime
 
 # TODO(calbach): Sanitize IDs (no ':') and any strings we're feeding into ES.
-# TODO(calbach): Figure out how to plumb parameters through, not globals.
-INDEX_ADDR = None
 ES_HEADERS = {'content-type': 'application/json'}
 
 
+def index_addr():
+  return current_app.config['INDEX_ADDR']
+
+
 def ds_index_type():
-  return INDEX_ADDR + '/cdr/datasets'
+  return index_addr() + '/cdr/datasets'
 
 
 def ds_index_path(ds_id):
@@ -29,11 +32,11 @@ def ds_index_path(ds_id):
 
 
 def by_ppl_index(ds_id):
-  return INDEX_ADDR + '/by-individual:' + ds_id
+  return index_addr() + '/by-individual:' + ds_id
 
 
 def by_data_index(ds_id):
-  return INDEX_ADDR + '/by-data:' + ds_id
+  return index_addr() + '/by-data:' + ds_id
 
 
 def ppl_by_ppl_index_path(ds_id, id):
