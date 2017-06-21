@@ -1,0 +1,399 @@
+swagger: '2.0'
+info:
+  title: Curated Data Index
+  description: |
+    API for indexing curated datasets with user-defined labels, and searching
+    that index.
+
+    Where possible this API follows [Google Cloud API design guidelines](
+    https://cloud.google.com/apis/design/), including the convention of using
+    relative resource names to refer to resources. For example, an Individual
+    may be addressed by `datasets/x/individuals/y`, where the entirety is a
+    resource name and `y` is the resource ID.
+  version: 0.0.1
+  license:
+    name: BSD
+    url: 'http://opensource.org/licenses/BSD-3-Clause'
+schemes:
+  - http
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+basePath: '/v1'
+paths:
+  /datasets:
+    get:
+      description: |
+        Paginated method for listing all datasets in the repository in a
+        deterministic order.
+      operationId: ListDatasets
+      responses:
+        '200':
+          description: List of datasets.
+          schema:
+            $ref: '#/definitions/ListDatasetsResponse'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - name: pageSize
+          description: |
+            The maximum number of datasets to return per page. The server may
+            return fewer. If unspecified, defaults to 64. Maximum value is 1024.
+          in: query
+          type: integer
+          format: int32
+        - name: pageToken
+          description: |
+            The continuation token, which is used to page through large result sets.
+            To get the next page of results, set this parameter to the value of
+            `nextPageToken` from the previous response.
+          in: query
+          type: string
+      tags:
+        - Datasets
+    post:
+      operationId: CreateDataset
+      responses:
+        '200':
+          description: The newly created dataset.
+          schema:
+            $ref: '#/definitions/Dataset'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Dataset'
+      tags:
+        - Datasets
+  '/datasets/{datasetId}':
+    get:
+      operationId: GetDataset
+      responses:
+        '200':
+          description: The requested dataset.
+          schema:
+            $ref: '#/definitions/Dataset'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/DatasetNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+      tags:
+        - Datasets
+    delete:
+      operationId: DeleteDataset
+      responses:
+        '200':
+          description: Success.
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/DatasetNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+      tags:
+        - Datasets
+    put:
+      operationId: UpdateDataset
+      responses:
+        '200':
+          description: The updated dataset.
+          schema:
+            $ref: '#/definitions/Dataset'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/DatasetNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Dataset'
+      tags:
+        - Datasets
+  '/datasets/{datasetId}/individuals':
+    post:
+      operationId: CreateIndividual
+      responses:
+        '200':
+          description: The newly created individual.
+          schema:
+            $ref: '#/definitions/Individual'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/DatasetNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Individual'
+      tags:
+        - Individuals
+  '/datasets/{datasetId}/individuals/{individualId}':
+    get:
+      operationId: GetIndividual
+      responses:
+        '200':
+          description: The requested individual.
+          schema:
+            $ref: '#/definitions/Individual'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/IndividualNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+        - $ref: '#/parameters/IndividualPathId'
+      tags:
+        - Individuals
+    delete:
+      operationId: DeleteIndividual
+      responses:
+        '200':
+          description: Success.
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/IndividualNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+        - $ref: '#/parameters/IndividualPathId'
+      tags:
+        - Individuals
+    put:
+      operationId: UpdateIndividual
+      responses:
+        '200':
+          description: The updated individual.
+          schema:
+            $ref: '#/definitions/Individual'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/IndividualNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+        - $ref: '#/parameters/IndividualPathId'
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Individual'
+      tags:
+        - Individuals
+  '/datasets/{datasetId}/dataPointers':
+    post:
+      operationId: CreateDataPointer
+      responses:
+        '200':
+          description: The newly created data pointer.
+          schema:
+            $ref: '#/definitions/DataPointer'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/DatasetNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/DataPointer'
+      tags:
+        - DataPointers
+  '/datasets/{datasetId}/dataPointers/{dataPointerId}':
+    get:
+      operationId: GetDataPointer
+      responses:
+        '200':
+          description: The requested data pointer.
+          schema:
+            $ref: '#/definitions/DataPointer'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/DataPointerNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+        - $ref: '#/parameters/DataPointerPathId'
+      tags:
+        - DataPointers
+    delete:
+      operationId: DeleteDataPointer
+      responses:
+        '200':
+          description: Success.
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/DataPointerNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+        - $ref: '#/parameters/DataPointerPathId'
+      tags:
+        - DataPointers
+    put:
+      operationId: UpdateDataPointer
+      responses:
+        '200':
+          description: The updated data pointer.
+          schema:
+            $ref: '#/definitions/DataPointer'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '404':
+          $ref: '#/responses/DataPointerNotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      parameters:
+        - $ref: '#/parameters/DatasetPathId'
+        - $ref: '#/parameters/DataPointerPathId'
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/DataPointer'
+      tags:
+        - DataPointers
+parameters:
+  DatasetPathId:
+    name: datasetId
+    in: path
+    required: true
+    type: string
+  IndividualPathId:
+    name: individualId
+    in: path
+    required: true
+    type: string
+  DataPointerPathId:
+    name: dataPointerId
+    in: path
+    required: true
+    type: string
+responses:
+  BadRequest:
+    description: 'Bad request.'
+  ServerError:
+    description: 'Internal server error.'
+  DatasetNotFound:
+    description: 'Dataset not found.'
+  IndividualNotFound:
+    description: 'Individual not found.'
+  DataPointerNotFound:
+    description: 'DataPointer not found.'
+definitions:
+  Dataset:
+    description: |
+      A logical collection of individuals and data with common attributes.
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        description: |
+          Unique client-specified resource name of the form 'datasets/*'.
+        type: string
+  ListDatasetsResponse:
+    type: object
+    properties:
+      datasets:
+        type: array
+        items:
+          $ref: '#/definitions/Dataset'
+      nextPageToken:
+        description: |
+          The continuation token, which is used to page through large result sets.
+          Provide this value in a subsequent request to return the next page of
+          results. This field will be empty if there aren't any additional results.
+        type: string
+  Individual:
+    description: |
+      Individuals, for example particpant or organisms, within a dataset.
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
+        description: |
+          Unique client-specified resource name of the individual of the form
+          'datasets/*/individuals/*'.
+      labels:
+        $ref: '#/definitions/Labels'
+  Labels:
+    type: object
+    additionalProperties: true
+  DataPointer:
+    description: |
+      URIs to data, for example files in cloud storage or SQL tables, within a
+      dataset.
+    type: object
+    required:
+      - uri
+    properties:
+      name:
+        type: string
+        description: |
+          Server generated unique resource name of the form
+          'datasets/*/dataPointers/*'.
+      uri:
+        type: string
+        description: |
+          A URI for the data that this pointer represents, for example
+          gs://bucket/object.txt or https://www.googleapis.com/bigquery/v2/projects/genomics-public-data/datasets/1000_genomes/tables.
+          URIs must be unique within this dataset.
+      individualNames:
+        type: array
+        items:
+          type: string
+        description: |
+          One-of individualNames or allIndividuals; full individual names of the
+          form 'datasets/*/individuals/*'. These individuals and this
+          dataPointer must belong to the same dataset.
+      allIndividuals:
+        type: boolean
+        format: boolean
+        description: One-of individualNames or allIndividuals.
+      labels:
+        $ref: '#/definitions/Labels'
+tags:
+  - name: Datasets
+  - name: Individuals
+  - name: DataPointers
