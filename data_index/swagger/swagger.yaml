@@ -1,0 +1,450 @@
+---
+swagger: "2.0"
+info:
+  description: "API for indexing curated datasets with user-defined labels, and searching\n\
+    that index.\n\nWhere possible this API follows [Google Cloud API design guidelines](\n\
+    https://cloud.google.com/apis/design/), including the convention of using\nrelative\
+    \ resource names to refer to resources. For example, an Individual\nmay be addressed\
+    \ by `datasets/x/individuals/y`, where the entirety is a\nresource name and `y`\
+    \ is the resource ID.\n"
+  version: "0.0.1"
+  title: "Curated Data Index"
+  license:
+    name: "BSD"
+    url: "http://opensource.org/licenses/BSD-3-Clause"
+basePath: "/v1"
+tags:
+- name: "Datasets"
+- name: "Individuals"
+- name: "DataPointers"
+schemes:
+- "http"
+- "https"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+paths:
+  /datasets:
+    get:
+      tags:
+      - "Datasets"
+      description: "Paginated method for listing all datasets in the repository in\
+        \ a\ndeterministic order.\n"
+      operationId: "list_datasets"
+      parameters:
+      - name: "pageSize"
+        in: "query"
+        description: "The maximum number of datasets to return per page. The server\
+          \ may\nreturn fewer. If unspecified, defaults to 64. Maximum value is 1024.\n"
+        required: false
+        type: "integer"
+        format: "int32"
+      - name: "pageToken"
+        in: "query"
+        description: "The continuation token, which is used to page through large\
+          \ result sets.\nTo get the next page of results, set this parameter to the\
+          \ value of\n`nextPageToken` from the previous response.\n"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "List of datasets."
+          schema:
+            $ref: "#/definitions/ListDatasetsResponse"
+        400:
+          description: "Bad request."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.datasets_controller"
+    post:
+      tags:
+      - "Datasets"
+      operationId: "create_dataset"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/Dataset"
+      responses:
+        200:
+          description: "The newly created dataset."
+          schema:
+            $ref: "#/definitions/Dataset"
+        400:
+          description: "Bad request."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.datasets_controller"
+  /datasets/{datasetId}:
+    get:
+      tags:
+      - "Datasets"
+      operationId: "get_dataset"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The requested dataset."
+          schema:
+            $ref: "#/definitions/Dataset"
+        400:
+          description: "Bad request."
+        404:
+          description: "Dataset not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.datasets_controller"
+    put:
+      tags:
+      - "Datasets"
+      operationId: "update_dataset"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/Dataset"
+      responses:
+        200:
+          description: "The updated dataset."
+          schema:
+            $ref: "#/definitions/Dataset"
+        400:
+          description: "Bad request."
+        404:
+          description: "Dataset not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.datasets_controller"
+    delete:
+      tags:
+      - "Datasets"
+      operationId: "delete_dataset"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success."
+        400:
+          description: "Bad request."
+        404:
+          description: "Dataset not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.datasets_controller"
+  /datasets/{datasetId}/individuals:
+    post:
+      tags:
+      - "Individuals"
+      operationId: "create_individual"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/Individual"
+      responses:
+        200:
+          description: "The newly created individual."
+          schema:
+            $ref: "#/definitions/Individual"
+        400:
+          description: "Bad request."
+        404:
+          description: "Dataset not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.individuals_controller"
+  /datasets/{datasetId}/individuals/{individualId}:
+    get:
+      tags:
+      - "Individuals"
+      operationId: "get_individual"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "individualId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The requested individual."
+          schema:
+            $ref: "#/definitions/Individual"
+        400:
+          description: "Bad request."
+        404:
+          description: "Individual not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.individuals_controller"
+    put:
+      tags:
+      - "Individuals"
+      operationId: "update_individual"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "individualId"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/Individual"
+      responses:
+        200:
+          description: "The updated individual."
+          schema:
+            $ref: "#/definitions/Individual"
+        400:
+          description: "Bad request."
+        404:
+          description: "Individual not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.individuals_controller"
+    delete:
+      tags:
+      - "Individuals"
+      operationId: "delete_individual"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "individualId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success."
+        400:
+          description: "Bad request."
+        404:
+          description: "Individual not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.individuals_controller"
+  /datasets/{datasetId}/dataPointers:
+    post:
+      tags:
+      - "DataPointers"
+      operationId: "create_data_pointer"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/DataPointer"
+      responses:
+        200:
+          description: "The newly created data pointer."
+          schema:
+            $ref: "#/definitions/DataPointer"
+        400:
+          description: "Bad request."
+        404:
+          description: "Dataset not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.data_pointers_controller"
+  /datasets/{datasetId}/dataPointers/{dataPointerId}:
+    get:
+      tags:
+      - "DataPointers"
+      operationId: "get_data_pointer"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "dataPointerId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The requested data pointer."
+          schema:
+            $ref: "#/definitions/DataPointer"
+        400:
+          description: "Bad request."
+        404:
+          description: "DataPointer not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.data_pointers_controller"
+    put:
+      tags:
+      - "DataPointers"
+      operationId: "update_data_pointer"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "dataPointerId"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/DataPointer"
+      responses:
+        200:
+          description: "The updated data pointer."
+          schema:
+            $ref: "#/definitions/DataPointer"
+        400:
+          description: "Bad request."
+        404:
+          description: "DataPointer not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.data_pointers_controller"
+    delete:
+      tags:
+      - "DataPointers"
+      operationId: "delete_data_pointer"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "dataPointerId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success."
+        400:
+          description: "Bad request."
+        404:
+          description: "DataPointer not found."
+        500:
+          description: "Internal server error."
+      x-swagger-router-controller: "data_index.controllers.data_pointers_controller"
+definitions:
+  Dataset:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      name:
+        type: "string"
+        description: "Unique client-specified resource name of the form 'datasets/*'.\n"
+    description: "A logical collection of individuals and data with common attributes.\n"
+  ListDatasetsResponse:
+    type: "object"
+    properties:
+      datasets:
+        type: "array"
+        items:
+          $ref: "#/definitions/Dataset"
+      nextPageToken:
+        type: "string"
+        description: "The continuation token, which is used to page through large\
+          \ result sets.\nProvide this value in a subsequent request to return the\
+          \ next page of\nresults. This field will be empty if there aren't any additional\
+          \ results.\n"
+  Individual:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      name:
+        type: "string"
+        description: "Unique client-specified resource name of the individual of the\
+          \ form\n'datasets/*/individuals/*'.\n"
+      labels:
+        $ref: "#/definitions/Labels"
+    description: "Individuals, for example particpant or organisms, within a dataset.\n"
+  Labels:
+    type: "object"
+  DataPointer:
+    type: "object"
+    required:
+    - "uri"
+    properties:
+      name:
+        type: "string"
+        description: "Server generated unique resource name of the form\n'datasets/*/dataPointers/*'.\n"
+      uri:
+        type: "string"
+        description: "A URI for the data that this pointer represents, for example\n\
+          gs://bucket/object.txt or https://www.googleapis.com/bigquery/v2/projects/genomics-public-data/datasets/1000_genomes/tables.\n\
+          URIs must be unique within this dataset.\n"
+      individualNames:
+        type: "array"
+        description: "One-of individualNames or allIndividuals; full individual names\
+          \ of the\nform 'datasets/*/individuals/*'. These individuals and this\n\
+          dataPointer must belong to the same dataset.\n"
+        items:
+          type: "string"
+      allIndividuals:
+        type: "boolean"
+        format: "boolean"
+        description: "One-of individualNames or allIndividuals."
+      labels:
+        $ref: "#/definitions/Labels"
+    description: "URIs to data, for example files in cloud storage or SQL tables,\
+      \ within a\ndataset.\n"
+parameters:
+  DatasetPathId:
+    name: "datasetId"
+    in: "path"
+    required: true
+    type: "string"
+  IndividualPathId:
+    name: "individualId"
+    in: "path"
+    required: true
+    type: "string"
+  DataPointerPathId:
+    name: "dataPointerId"
+    in: "path"
+    required: true
+    type: "string"
+responses:
+  BadRequest:
+    description: "Bad request."
+  DataPointerNotFound:
+    description: "DataPointer not found."
+  DatasetNotFound:
+    description: "Dataset not found."
+  IndividualNotFound:
+    description: "Individual not found."
+  ServerError:
+    description: "Internal server error."
