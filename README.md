@@ -27,5 +27,8 @@ tox
 ```
 wget http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/2.2.2/swagger-codegen-cli-2.2.2.jar -O swagger-codegen-cli.jar
 
-java -jar swagger-codegen-cli.jar generate -i api/index.swagger.yaml -l python-flask -DsupportPython2=true,packageName=data_index
+java -jar swagger-codegen-cli.jar generate \
+  -i api/index.swagger.yaml \
+  -l python-flask \
+  -DsupportPython2=true,packageName=data_index
 ```
