@@ -38,16 +38,16 @@ def get_individual(datasetId, individualId):
 
 def update_individual(datasetId, individualId, body):
     """
-  Updates a data pointer.
+    Updates a data pointer.
 
-  Args:
-    datasetId: the parent dataset
-    individualId: the individual to update
-    body: JSON representation of the updated Individual
+    Args:
+      datasetId: the parent dataset
+      individualId: the individual to update
+      body: JSON representation of the updated Individual
 
-  Returns:
-    a JSON representation of the updated Individual
-  """
+    Returns:
+      a JSON representation of the updated Individual
+    """
     if connexion.request.is_json:
         body = Individual.from_dict(connexion.request.get_json())
     raise NotImplemented()
@@ -60,5 +60,5 @@ def delete_individual(datasetId, individualId):
     Args:
       datasetId: the parent dataset
       individualId: the individual to delete
-  """
+    """
     raise NotImplemented()

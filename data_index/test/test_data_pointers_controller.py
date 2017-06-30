@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
-from swagger_server.models.data_pointer import DataPointer
-from swagger_server.test import BaseTestCase
+from data_index.models.data_pointer import DataPointer
+from data_index.test import BaseTestCase
 from six import BytesIO
 from flask import json
 
@@ -10,7 +10,7 @@ class TestDataPointersController(BaseTestCase):
     """DataPointers integration tests."""
 
     def test_create_data_pointer(self):
-        body = DataPointer()
+        body = DataPointer(uri='gs://my/b.txt')
         response = self.client.open(
             '/v1/datasets/{datasetId}/dataPointers'.format(
                 datasetId='datasetId_example'),
@@ -31,7 +31,7 @@ class TestDataPointersController(BaseTestCase):
                           "Response body is : " + response.data.decode('utf-8'))
 
     def test_update_data_pointer(self):
-        body = DataPointer()
+        body = DataPointer(uri='gs://my/b.txt')
         response = self.client.open(
             '/v1/datasets/{datasetId}/dataPointers/{dataPointerId}'.format(
                 datasetId='datasetId_example',

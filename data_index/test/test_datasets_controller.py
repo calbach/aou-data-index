@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
-from swagger_server.models.dataset import Dataset
-from swagger_server.models.list_datasets_response import ListDatasetsResponse
-from swagger_server.test import BaseTestCase
+from data_index.models.dataset import Dataset
+from data_index.models.list_datasets_response import ListDatasetsResponse
+from data_index.test import BaseTestCase
 from six import BytesIO
 from flask import json
 
@@ -21,7 +21,7 @@ class TestDatasetsController(BaseTestCase):
                           "Response body is : " + response.data.decode('utf-8'))
 
     def test_create_dataset(self):
-        body = Dataset()
+        body = Dataset(name='datasets/foo')
         response = self.client.open(
             '/v1/datasets',
             method='POST',
@@ -39,9 +39,9 @@ class TestDatasetsController(BaseTestCase):
                           "Response body is : " + response.data.decode('utf-8'))
 
     def test_update_dataset(self):
-        body = Dataset()
+        body = Dataset(name='datasets/foo')
         response = self.client.open(
-            '/v1/datasets/{datasetId}'.format(datasetId='datasetId_example'),
+            '/v1/datasets/{datasetId}'.format(datasetId='foo'),
             method='PUT',
             data=json.dumps(body),
             content_type='application/json')
