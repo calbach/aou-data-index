@@ -1,0 +1,11 @@
+git_push.sh
+Dockerfile
+README.md
+.travis.yml
+.dockerignore
+.gitignore
+tox.ini
+
+# These have been hand-modified, no need to regenerate.
+**/*_controller.py
+**/__main__.py
