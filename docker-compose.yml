@@ -1,0 +1,47 @@
+version: '2'
+services:
+  data_index:
+    build: .
+    command: [
+      python, -m, data_index, --index_addr, "http://elastic:9200",
+      --port, "9190"
+    ]
+    volumes:
+      # Mount the python source to minimize image rebuilds.
+      - ./data_index:/data_index
+    ports:
+      - 9190:9190
+    links:
+      - elastic
+
+  # Elastic on docker-compose configured per
+  # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+  elastic:
+    build:
+      context: .
+      dockerfile: Dockerfile.elastic
+    container_name: elastic
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - http.host=0.0.0.0
+      - transport.host=127.0.0.1
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    mem_limit: 1g
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - esdata:/tmp/elasticsearch/data
+    ports:
+      - 9200:9200
+
+volumes:
+  esdata:
+    driver: local
