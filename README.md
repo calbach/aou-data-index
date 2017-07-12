@@ -1,18 +1,19 @@
 # Curated Data Repository (CDR) Index
 
-## Setup and run
+## Setup
+
+[Install docker-compose](https://docs.docker.com/compose/install/)
+
+## Run
 
 ```
-virtualenv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python -m data_index
+docker-compose up
 ```
 
 To see the Swagger API definition, open your browser to:
 
 ```
-http://localhost:8080/v1/ui/
+http://localhost:9190/v1/ui/
 ```
 
 ## Running tests

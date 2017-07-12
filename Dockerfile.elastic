@@ -1,0 +1,6 @@
+FROM docker.elastic.co/elasticsearch/elasticsearch:5.3.0
+
+USER root
+ADD elasticsearch.yml /tmp/elasticsearch.yml
+RUN install -m 744 /tmp/elasticsearch.yml config/elasticsearch.yml
+USER elasticsearch
