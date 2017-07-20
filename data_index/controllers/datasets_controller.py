@@ -1,11 +1,58 @@
 import connexion
+import errors
+import requests
 from data_index.models.dataset import Dataset
 from data_index.models.list_datasets_response import ListDatasetsResponse
 from datetime import date, datetime
 from typing import List, Dict
 from six import iteritems
-from werkzeug.exceptions import NotImplemented
-from ..util import deserialize_date, deserialize_datetime
+from data_index import elastic
+from data_index.models.dataset import Dataset
+from data_index.models.list_datasets_response import ListDatasetsResponse
+from data_index.util import deserialize_date, deserialize_datetime
+from werkzeug.exceptions import BadRequest, Conflict, InternalServerError, NotFound, NotImplemented
+
+
+def split_ds_name(ds_name):
+    """Takes a full dataset id string and returns the unique ID.
+
+    >>> split_ds_name('datasets/abc123')
+    'abc123'
+
+    Args:
+      ds_name: (string) full resource name of a dataset, e.g. 'datasets/abc123'
+
+    Returns:
+      (string) the dataset resource id, e.g. 'abc123'
+    """
+    parts = ds_name.split('/')
+    if len(parts) != 2 or parts[0] != 'datasets':
+        raise BadRequest('malformed dataset name "{}"'.format(ds_name))
+    return parts[1]
+
+
+def doc_to_dataset(doc):
+    """Converts an ElasticSearch document dict to a Dataset model.
+
+    Args:
+      doc: (dict) an ElasticSearch document representation of a dataset
+
+    Returns:
+      (data_index.models.dataset.Dataset) a dataset model instance
+    """
+    return Dataset(name='datasets/' + doc['_id'])
+
+
+def dataset_to_doc(dataset):
+    """Converts a Dataset model to an ElasticSearch document dict.
+
+    Args:
+      dataset: (data_index.models.dataset.Dataset) a dataset model instance
+
+    Returns:
+      (dict) an ElasticSearch document representation of the dataset
+    """
+    return {}
 
 
 def list_datasets(pageSize=64, pageToken=None):
@@ -34,11 +81,67 @@ def create_dataset(body):
       body: the dataset JSON
 
     Returns:
-      a dictionary representing a Dataset
+      the newly created Dataset
     """
-    if connexion.request.is_json:
-        body = Dataset.from_dict(connexion.request.get_json())
-    raise NotImplemented()
+    if not connexion.request.is_json:
+        raise BadRequest('got unexpected non-JSON payload')
+    dataset = Dataset.from_dict(body)
+    if not dataset or not dataset.name:
+        raise BadRequest('missing required dataset.name from request')
+
+    # Check whether the dataset already exists.
+    ds_id = split_ds_name(dataset.name)
+    exists = True
+    try:
+        get_dataset(ds_id)
+    except errors.DatasetNotFound:
+        exists = False
+    if exists:
+        raise Conflict('dataset "{}" already exists'.format(dataset.name))
+
+    # Each dataset has two associated indices, which together form a
+    # bidirectional mapping of individual <-> data pointer using Elastic's
+    # parent-child document semantics.
+    def raise_for_index_create_status(r):
+        if r.status_code != requests.codes.ok and (
+                elastic.error_type(r.json()) != elastic.INDEX_ALREADY_EXISTS):
+            r.raise_for_status()
+
+    r = requests.put(
+        elastic.by_ppl_index(ds_id),
+        json={
+            'mappings': {
+                'individuals': {},
+                'data': {
+                    '_parent': {
+                        'type': 'individuals',
+                    },
+                },
+            },
+        },
+        headers=elastic.REQ_HEADERS)
+    raise_for_index_create_status(r)
+    r = requests.put(
+        elastic.by_data_index(ds_id),
+        json={
+            'mappings': {
+                'data': {},
+                'individuals': {
+                    '_parent': {
+                        'type': 'data',
+                    },
+                },
+            },
+        },
+        headers=elastic.REQ_HEADERS)
+    raise_for_index_create_status(r)
+
+    # Create the dataset metadata doc last to mark successful creation.
+    requests.put(
+        elastic.ds_index_path(ds_id),
+        json=dataset_to_doc(dataset),
+        headers=elastic.REQ_HEADERS).raise_for_status()
+    return dataset
 
 
 def get_dataset(datasetId):
@@ -49,9 +152,13 @@ def get_dataset(datasetId):
       datasetId: the dataset to retrieve
 
     Returns:
-      a dictionary representation of a Dataset
+      the requested Dataset
     """
-    raise NotImplemented()
+    r = requests.get(elastic.ds_index_path(datasetId))
+    if r.status_code == requests.codes.not_found:
+        raise errors.DatasetNotFound(datasetId)
+    r.raise_for_status()
+    return doc_to_dataset(r.json())
 
 
 def update_dataset(datasetId, body):
@@ -63,11 +170,29 @@ def update_dataset(datasetId, body):
       body: JSON representation of the updated Dataset
 
     Returns:
-      a JSON representation of the updated Dataset
+      the updated Dataset
     """
-    if connexion.request.is_json:
-        body = Dataset.from_dict(connexion.request.get_json())
-    raise NotImplemented()
+    if not connexion.request.is_json:
+        raise InternalServerError('got unexpected non-JSON payload')
+    dataset = Dataset.from_dict(body)
+    if dataset.name:
+        ds_id = split_ds_name(dataset.name)
+        if ds_id != datasetId:
+            raise BadRequest(
+                'URL dataset name "datasets/{}" and dataset.name "{}" must agree'.
+                format(datasetId, dataset.name))
+    else:
+        dataset.name = 'datasets/' + datasetId
+
+    # Raises an error if the dataset is not found.
+    get_dataset(ds_id)
+
+    # For now, we only accept full replacement updates.
+    requests.put(
+        elastic.ds_index_path(ds_id),
+        json=dataset_to_doc(dataset),
+        headers=elastic.REQ_HEADERS).raise_for_status()
+    return dataset
 
 
 def delete_dataset(datasetId):
@@ -77,4 +202,27 @@ def delete_dataset(datasetId):
     Args:
       datasetId: the dataset to delete
     """
-    raise NotImplemented()
+    responses = []
+    # We cannot apply these deletions in a transaction, so we must tolerate
+    # failures between any of the following mutations. Delete the dataset
+    # metadata document first to indicate to the rest of the system that the
+    # dataset is no longer active.
+    for path in [
+            elastic.ds_index_path(datasetId),
+            elastic.by_ppl_index(datasetId),
+            elastic.by_data_index(datasetId)
+    ]:
+        r = requests.delete(path)
+        responses.append(r)
+
+    # This method should be retryable, even if it fails half-way through. To
+    # that end, only return a 404 if we've previously deleted all associated
+    # indices for the dataset.
+    if all([r.status_code == requests.codes.not_found for r in responses]):
+        raise errors.DatasetNotFound(datasetId)
+
+    # If a deletion failed for any other reason, raise an internal error.
+    for r in responses:
+        if r.status_code != requests.codes.not_found:
+            # Only raises an exception for non-2XXs.
+            r.raise_for_status()
