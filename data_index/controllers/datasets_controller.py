@@ -1,5 +1,7 @@
+import base64
 import connexion
 import errors
+import json
 import requests
 from data_index.models.dataset import Dataset
 from data_index.models.list_datasets_response import ListDatasetsResponse
@@ -55,6 +57,33 @@ def dataset_to_doc(dataset):
     return {}
 
 
+def encode_ds_page_token(offset):
+    """Encode the dataset pagination token.
+
+    Args:
+      offset: (int) offset from the start of the matching datasets
+
+    Returns:
+      (string) encoded page token representing a page of datasets
+    """
+    # We implement the pagination token via base64-encoded JSON s.t. tokens are
+    # opaque to clients and enable us to make backwards compatible changes to our
+    # pagination implementation. Base64+JSON are used specifically as they are
+    # language-independent standards.
+    s = json.dumps({
+        'offset': offset,
+    })
+    # Strip ugly base64 padding.
+    return base64.urlsafe_b64encode(s).rstrip('=')
+
+
+def decode_ds_page_token(token):
+    """Decode the dataset pagination token."""
+    padded_token = token + '=' * (len(token) % 4)
+    tok = base64.urlsafe_b64decode(padded_token)
+    return json.loads(tok)
+
+
 def list_datasets(pageSize=64, pageToken=None):
     """
     Paginated method for listing all datasets in the repository.
@@ -70,7 +99,35 @@ def list_datasets(pageSize=64, pageToken=None):
     Returns:
       a dictionary representation of a ListDatasetsResponse
     """
-    raise NotImplemented()
+    es_req = {
+        'size': pageSize + 1,
+        'query': {
+            'match_all': {},
+        },
+        'sort': [
+            '_doc',  # Index order.
+        ],
+    }
+    offset = 0
+    if pageToken:
+        tok = decode_ds_page_token(pageToken)
+        offset = tok.get('offset')
+        es_req['from'] = offset
+
+    r = requests.post(
+        elastic.ds_index_type() + '/_search',
+        json=es_req,
+        headers=elastic.REQ_HEADERS)
+    r.raise_for_status()
+
+    next_page_token = None
+    hits = r.json().get('hits').get('hits')
+    if len(hits) > pageSize:
+        hits = hits[:pageSize]
+        next_page_token = encode_ds_page_token(offset + pageSize)
+    return ListDatasetsResponse(
+        datasets=[doc_to_dataset(d) for d in hits],
+        next_page_token=next_page_token)
 
 
 def create_dataset(body):
