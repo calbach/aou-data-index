@@ -5,7 +5,9 @@ README.md
 .dockerignore
 .gitignore
 tox.ini
+test-requirements.txt
 
 # These have been hand-modified, no need to regenerate.
 **/*_controller.py
 **/__main__.py
+**/test/__init__.py
