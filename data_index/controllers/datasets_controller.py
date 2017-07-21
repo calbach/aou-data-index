@@ -52,6 +52,8 @@ def dataset_to_doc(dataset):
     Returns:
       (dict) an ElasticSearch document representation of the dataset
     """
+    # Note: a dataset document is currently empty, future extensions to the
+    # dataset API resource will be stored here.
     return {}
 
 
