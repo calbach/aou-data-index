@@ -1,4 +1,4 @@
-import data_index.elastic
+from data_index import elastic
 import httpretty
 import json
 import re
@@ -30,7 +30,7 @@ class FakeElastic:
         return (200, {}, '')
 
 
-    def put_document(self, index_name, doc_type, doc_id, doc):
+    def put_document(self, index_name, doc_type, doc_id, doc, query_params):
         if index_name not in self.indices:
             # Simulate Elastic's lazy index creation.
             self.put_index(index_name)
@@ -39,8 +39,12 @@ class FakeElastic:
             index[doc_type] = {}
         doc = doc.copy()
         doc['_id'] = doc_id
+        if doc_id in index[doc_type] and (
+            'op_type' in query_params and query_params['op_type'] == ['create']):
+            return (409, {}, json.dumps({}))
+
         index[doc_type][doc_id] = doc
-        return (200, {}, '')
+        return (200, {}, json.dumps({}))
 
 
     def get_document(self, index_name, doc_type, doc_id):
@@ -60,7 +64,7 @@ class FakeElastic:
 
 def register_httpretty(base_url, fake):
     # Wrap index methods.
-    index_re = re.compile(base_url + '/[^/]+$')
+    index_re = re.compile(base_url + '/[^/?]+(\?.*)?$')
     def wrap_put_index(request, uri, headers):
         return fake.put_index(uri[len(base_url + '/'):])
     httpretty.register_uri(httpretty.PUT, index_re, wrap_put_index)
@@ -70,11 +74,12 @@ def register_httpretty(base_url, fake):
     httpretty.register_uri(httpretty.DELETE, index_re, wrap_delete_index)
 
     # Wrap document methods.
-    doc_re = re.compile(base_url + '/([^/]+)/([^/]+)/([^/]+)$')
+    doc_re = re.compile(base_url + '/([^/]+)/([^/]+)/([^/?]+)(\?.*)?$')
     def wrap_put_document(request, uri, headers):
         doc = json.loads(request.body)
         m = doc_re.match(uri)
-        return fake.put_document(m.group(1), m.group(2), m.group(3), doc)
+        return fake.put_document(m.group(1), m.group(2), m.group(3), doc,
+                                 request.querystring)
     httpretty.register_uri(httpretty.PUT, doc_re, wrap_put_document)
 
     def wrap_get_document(request, uri, headers):
