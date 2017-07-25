@@ -91,19 +91,12 @@ def create_dataset(body):
     if not dataset or not dataset.name:
         raise BadRequest('missing required dataset.name from request')
 
-    # Check whether the dataset already exists.
     ds_id = split_ds_name(dataset.name)
-    exists = True
-    try:
-        get_dataset(ds_id)
-    except errors.DatasetNotFound:
-        exists = False
-    if exists:
-        raise Conflict('dataset "{}" already exists'.format(dataset.name))
 
     # Each dataset has two associated indices, which together form a
     # bidirectional mapping of individual <-> data pointer using Elastic's
-    # parent-child document semantics.
+    # parent-child document semantics. Allow these indices to exist already, in
+    # the event that a previous create_dataset() was partially successful.
     def raise_for_index_create_status(r):
         if r.status_code != requests.codes.ok and (
                 elastic.error_type(r.json()) != elastic.INDEX_ALREADY_EXISTS):
@@ -139,11 +132,19 @@ def create_dataset(body):
     raise_for_index_create_status(r)
 
     # Create the dataset metadata doc last to mark successful creation.
-    requests.put(
+    r = requests.put(
         elastic.ds_index_path(ds_id),
+        params={
+            'op_type': 'create',
+        },
         json=dataset_to_doc(dataset),
-        headers=elastic.REQ_HEADERS).raise_for_status()
-    return dataset
+        headers=elastic.REQ_HEADERS)
+    if r.status_code == requests.codes.conflict:
+        raise Conflict('dataset "{}" already exists'.format(dataset.name))
+    r.raise_for_status()
+
+    # TODO(calbach): Verify that this is guaranteed to return consistently.
+    return get_dataset(ds_id)
 
 
 def get_dataset(datasetId):
