@@ -47,3 +47,28 @@ java -jar swagger-codegen-cli.jar generate \
   -l python-flask \
   -DsupportPython2=true,packageName=data_index
 ```
+
+## Deploy
+
+### Dev
+
+http://bvdp-verily-dev.appspot.com
+
+API push (for changes to api/index.swagger.yaml):
+
+```
+gcloud service-management configs list --service=bvdp-verily-dev.appspot.com --project bvdp-verily-dev
+```
+
+Update app.yaml with the latest config version:
+
+```
+config_id=$(gcloud service-management configs list --service=bvdp-verily-dev.appspot.com --project bvdp-verily-dev --format="csv[no-heading](CONFIG_ID)" --limit 1)
+sed -i "s/config_id:.*/config_id: \"${config_id}\"/" app.yaml
+```
+
+Backend push:
+
+```
+gcloud app deploy --project bvdp-verily-dev
+```

@@ -6,5 +6,5 @@ runtime_config:
   python_version: 2
 
 endpoints_api_service:
-  name: "data-index.endpoints.bvdp-verily-dev.cloud.goog"
-  config_id: "2017-07-20r0"
+  name: "bvdp-verily-dev.appspot.com"
+  config_id: "2017-07-26r0"

@@ -14,7 +14,8 @@ info:
   license:
     name: BSD
     url: 'http://opensource.org/licenses/BSD-3-Clause'
-host: 'data-index.endpoints.bvdp-verily-dev.cloud.goog'
+host: 'bvdp-verily-dev.appspot.com'
+x-google-allow: all
 schemes:
   - http
   - https
