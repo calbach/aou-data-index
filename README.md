@@ -23,6 +23,20 @@ pip install tox
 tox
 ```
 
+### Useful flags
+
+Support breakpointing with pdb:
+
+```
+tox -- -s
+```
+
+Run a subset of tests:
+
+```
+tox -- -s data_index/test/test_datasets_controller.py:TestDatasetsController
+```
+
 ## Swagger codegen
 
 ```
