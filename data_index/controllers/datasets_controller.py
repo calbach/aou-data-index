@@ -1,5 +1,7 @@
+import base64
 import connexion
 import errors
+import json
 import requests
 from data_index.models.dataset import Dataset
 from data_index.models.list_datasets_response import ListDatasetsResponse
@@ -10,6 +12,7 @@ from data_index import elastic
 from data_index.models.dataset import Dataset
 from data_index.models.list_datasets_response import ListDatasetsResponse
 from data_index.util import deserialize_date, deserialize_datetime
+from flask import current_app
 from werkzeug.exceptions import BadRequest, Conflict, InternalServerError, NotFound, NotImplemented
 
 
@@ -52,9 +55,59 @@ def dataset_to_doc(dataset):
     Returns:
       (dict) an ElasticSearch document representation of the dataset
     """
-    # Note: a dataset document is currently empty, future extensions to the
-    # dataset API resource will be stored here.
-    return {}
+    return {
+        # Store the id explicitly so that we can query it. The default _id
+        # cannot be used in general queries.
+        'id': split_ds_name(dataset.name)
+    }
+
+
+def encode_ds_page_token(next_ds_id):
+    """Encode the dataset pagination token.
+
+    We implement the pagination token via base64-encoded JSON s.t. tokens are
+    opaque to clients and enable us to make backwards compatible changes to our
+    pagination implementation. Base64+JSON are used specifically as they are
+    easily portable across language.
+
+    We encode the "next ID" for pagination to ensure a stable iteration order
+    for a paginated client. The tradeoff to ordering by dataset ID is that our
+    ElasticSearch query requires a bit more computation. The alternative of
+    using index default order is not obviously documented as being stable and
+    does not allow for range queries. The common alternative of an offset-based
+    approach is conceptually simpler, but has the major downside that creating
+    or deleting datasets during pagination may result in skipped or duplicated
+    entities in another client's overall pagination stream.
+
+    Args:
+      next_ds_id: (string) next dataset ID
+
+    Returns:
+      (string) encoded page token representing a page of datasets
+    """
+    s = json.dumps({
+        'next_id': next_ds_id,
+    })
+    # Strip ugly base64 padding.
+    return base64.urlsafe_b64encode(s).rstrip('=')
+
+
+def decode_ds_page_token(token):
+    """Decode the dataset pagination token.
+
+    Args:
+      token: (string) base64 encoded JSON pagination token
+
+    Returns:
+      (dict) decoded JSON dictionary containing a 'next_id'
+    """
+    # Pad the token out to be divisible by 4.
+    padded_token = token + '=' * (-len(token) % 4)
+    tok = base64.urlsafe_b64decode(padded_token)
+    tok_dict = json.loads(tok)
+    if 'next_id' not in tok_dict:
+        raise ValueError('invalid token JSON {}'.format(tok_dict))
+    return tok_dict
 
 
 def list_datasets(pageSize=64, pageToken=None):
@@ -72,7 +125,51 @@ def list_datasets(pageSize=64, pageToken=None):
     Returns:
       a dictionary representation of a ListDatasetsResponse
     """
-    raise NotImplemented()
+    if pageSize <= 0:
+        raise BadRequest('invalid pageSize {}, must be positive', pageSize)
+    pageSize = min(pageSize, 1024)
+
+    es_req = {
+        'size': pageSize + 1,
+        'query': {
+            'match_all': {},
+        },
+        'sort': [
+            'id.keyword',
+        ],
+    }
+    if pageToken:
+        try:
+            tok = decode_ds_page_token(pageToken)
+        except Exception as e:
+            current_app.logger.warning('bad token "%s": %s', pageToken, e)
+            raise BadRequest('invalid pageToken "{}"'.format(pageToken))
+        es_req['query'] = {
+            'range': {
+                'id': {
+                    'gte': tok.get('next_id')
+                },
+            },
+        }
+
+    r = requests.post(
+        elastic.ds_index_type() + '/_search',
+        json=es_req,
+        headers=elastic.REQ_HEADERS)
+    if r.status_code == requests.codes.not_found:
+        # For a newly initialized elastic search backend, the datasets index
+        # will not exist until the first dataset is inserted.
+        return ListDatasetsResponse(datasets=[])
+    r.raise_for_status()
+
+    next_page_token = None
+    hits = r.json().get('hits').get('hits')
+    if len(hits) > pageSize:
+        next_page_token = encode_ds_page_token(hits[pageSize]['source']['id'])
+        hits = hits[:pageSize]
+    return ListDatasetsResponse(
+        datasets=[doc_to_dataset(d) for d in hits],
+        next_page_token=next_page_token)
 
 
 def create_dataset(body):

@@ -27,7 +27,8 @@ paths:
     get:
       description: |
         Paginated method for listing all datasets in the repository in a
-        deterministic order.
+        deterministic order. Follows pagination semantics outlined [here](
+        https://cloud.google.com/apis/design/design_patterns#list_pagination)
       operationId: ListDatasets
       responses:
         '200':

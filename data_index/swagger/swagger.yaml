@@ -30,7 +30,8 @@ paths:
       tags:
       - "Datasets"
       description: "Paginated method for listing all datasets in the repository in\
-        \ a\ndeterministic order.\n"
+        \ a\ndeterministic order. Follows pagination semantics outlined [here](\n\
+        https://cloud.google.com/apis/design/design_patterns#list_pagination)\n"
       operationId: "list_datasets"
       parameters:
       - name: "pageSize"
