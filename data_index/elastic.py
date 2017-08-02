@@ -28,3 +28,21 @@ def by_ppl_index(ds_id):
 
 def by_data_index(ds_id):
   return index_addr() + '/by-data:' + ds_id
+
+
+def ppl_by_ppl_index_path(ds_id, id):
+  return by_ppl_index(ds_id) + '/individuals/' + id
+
+
+def data_by_ppl_index_path(ds_id, dp_id, ind_id):
+  return by_ppl_index(ds_id) + '/data/{}:{}?parent={}'.format(
+      ind_id, dp_id, ind_id)
+
+
+def data_by_data_index_path(ds_id, dp_id):
+  return by_data_index(ds_id) + '/data/' + dp_id
+
+
+def ppl_by_data_index_path(ds_id, indID, dp_id):
+  return by_data_index(ds_id) + '/individuals/{}:{}?parent={}'.format(
+      dp_id, indID, dp_id)

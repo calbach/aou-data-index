@@ -1,4 +1,6 @@
 import connexion
+import requests
+from data_index.controllers import datasets_controller, names, errors
 from data_index.models.individual import Individual
 from data_index import elastic
 from datetime import date, datetime
@@ -8,11 +10,17 @@ from werkzeug.exceptions import BadRequest, InternalServerError, NotImplemented
 from ..util import deserialize_date, deserialize_datetime
 
 
-def split_individual_name(name):
-  parts = name.split('/')
-  if len(parts) != 4 or parts[0] != 'datasets' or parts[2] != 'individuals':
-    raise BadRequest('malformed individual name "{}"'.format(name))
-  return (parts[1], parts[3])
+def doc_to_individual(doc):
+  ds_id = doc['_index'].split(':')[1]
+  return Individual(
+      name='datasets/{}/individuals/{}'.format(ds_id, doc['_id']),
+      labels=doc['_source'].copy())
+
+
+def individual_to_doc(individual):
+  if not individual.labels:
+      return {}
+  return individual.labels.copy()
 
 
 def create_individual(datasetId, body):
@@ -31,16 +39,16 @@ def create_individual(datasetId, body):
     if not individual or not individual.name:
         raise BadRequest('missing required individual.name from request')
 
-    (ds_id, ind_id) = split_individual_name(individual.name)
+    (ds_id, ind_id) = names.split_individual_name(individual.name)
     if ds_id != datasetId:
         raise BadRequest('dataset name "datasets/{}" from URL must agree with ' +
                          'individual.name "{}"'.format(datasetId, individual.name))
 
     # Will raise NotFound if the dataset doesn't exist.
-    get_dataset(datasetId)
+    datasets_controller.get_dataset(datasetId)
 
     requests.put(
-        ppl_by_ppl_index_path(ds_id, ind_id),
+        elastic.ppl_by_ppl_index_path(ds_id, ind_id),
         json=individual_to_doc(individual),
         headers=elastic.REQ_HEADERS).raise_for_status()
     return individual
@@ -57,7 +65,12 @@ def get_individual(datasetId, individualId):
     Returns:
       a dictionary representation of a Individual
     """
-    raise NotImplemented()
+    r = requests.get(elastic.ppl_by_ppl_index_path(datasetId, individualId))
+    if r.status_code == requests.codes.not_found:
+        raise errors.IndividualNotFound(datasetId, individualId)
+    r.raise_for_status()
+    return doc_to_individual(r.json())
+
 
 
 def update_individual(datasetId, individualId, body):
