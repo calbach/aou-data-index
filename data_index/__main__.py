@@ -24,3 +24,6 @@ if __name__ == '__main__':
 
     app.app.config['INDEX_ADDR'] = args.index_addr
     app.run(host='0.0.0.0', port=args.port)
+else:
+    # Require a config file env var for running with gunicorn.
+    app.app.config.from_envvar('FLASK_SETTINGS')

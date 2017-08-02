@@ -1,7 +1,6 @@
 *.py[cod]
 *$py.class
 
-*.settings
 client_secrets.json
 swagger-codegen-cli.jar
 

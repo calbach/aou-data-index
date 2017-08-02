@@ -14,6 +14,8 @@ info:
   license:
     name: BSD
     url: 'http://opensource.org/licenses/BSD-3-Clause'
+host: 'bvdp-verily-dev.appspot.com'
+x-google-allow: all
 schemes:
   - http
   - https
