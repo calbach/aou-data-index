@@ -1,9 +1,9 @@
-from connexion.decorators import produces
+from flask import json
 from six import iteritems
 from data_index.models.base_model_ import Model
 
 
-class JSONEncoder(produces.JSONEncoder):
+class JSONEncoder(json.JSONEncoder):
     include_nulls = False
 
     def default(self, o):
@@ -16,4 +16,4 @@ class JSONEncoder(produces.JSONEncoder):
                 attr = o.attribute_map[attr]
                 dikt[attr] = value
             return dikt
-        return produces.JSONEncoder.default(self, o)
+        return json.JSONEncoder.default(self, o)

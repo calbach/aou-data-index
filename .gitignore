@@ -1,5 +1,7 @@
 *.py[cod]
 *$py.class
+build/
+dist/
 
 *.settings
 client_secrets.json
